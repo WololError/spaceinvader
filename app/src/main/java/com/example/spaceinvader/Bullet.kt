@@ -1,14 +1,24 @@
 package com.example.spaceinvader
 
-class Bullet(
-    x: Float,
-    y: Float,
-    val damage: Int
-) : Entity(x, y, width = 10f, height = 20f, speedX = 0f, speedY = -15f), Movable {
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+
+class Bullet(x: Float, y: Float) : Entity(x, y, 10f, 40f, 0f, -20f), Movable {
+
+    val r = RectF(x, y, x + width, y + height)
+    val paint = Paint()
+
+    init {
+        paint.color = Color.YELLOW
+    }
+
+    fun draw(canvas: Canvas) {
+        canvas.drawRect(r, paint)
+    }
 
     override fun move() {
-        // Implement the movement logic for the bullet
-        x += speedX
-        y += speedY
+        r.offset(speedX, speedY)
     }
 }
