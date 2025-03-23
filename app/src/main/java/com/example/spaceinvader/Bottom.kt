@@ -9,7 +9,7 @@ import android.graphics.RectF
 class Bottom(x: Float, y: Float) {
 
     private val width: Float = 1700f
-    private val height: Float = 10f
+    private val height: Float = 100f
 
     val r = RectF(x, y, x + width, y + height)
 
