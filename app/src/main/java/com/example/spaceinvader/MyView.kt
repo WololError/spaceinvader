@@ -2,14 +2,17 @@ package com.example.spaceinvader
 
 import android.content.Context
 import android.graphics.Canvas
+import android.os.Handler
+import android.os.Looper
 import android.view.MotionEvent
 import android.view.SurfaceView
+import android.widget.Toast
 
 class MyView(context: Context) : SurfaceView(context) {
     private lateinit var player: Player
-    private var isMovingLeft = false
-    private var isMovingRight = false
-    private val enemies = mutableListOf<Enemy>()
+    var isMovingLeft = false
+    var isMovingRight = false
+    val enemies = mutableListOf<Enemy>()
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -35,21 +38,39 @@ class MyView(context: Context) : SurfaceView(context) {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                if (event.x < measuredWidth / 2f) {
-                    isMovingLeft = true
-                    isMovingRight = false
-                } else {
-                    isMovingLeft = false
-                    isMovingRight = true
+                val leftZone = event.x < measuredWidth / 2f - 100 && event.y > 1700
+                val rightZone = event.x > measuredWidth / 2f + 100 && event.y > 1700
+
+                when {
+                    leftZone -> {
+                        isMovingLeft = true
+                        isMovingRight = false
+                    }
+                    rightZone -> {
+                        isMovingLeft = false
+                        isMovingRight = true
+                    }
+                    else -> {
+
+                        val toast = Toast.makeText(context, "Shoot", Toast.LENGTH_SHORT)
+                        toast.show()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            toast.cancel()
+                        }, 500)
+                    }
                 }
             }
+
             MotionEvent.ACTION_UP -> {
                 isMovingLeft = false
                 isMovingRight = false
             }
         }
+
         return true
     }
+
+
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
