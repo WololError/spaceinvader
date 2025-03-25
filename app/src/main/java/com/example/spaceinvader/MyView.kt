@@ -1,85 +1,65 @@
 package com.example.spaceinvader
-
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.RectF
-import android.view.MotionEvent
-import android.view.SurfaceView
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
+import android.view.SurfaceView
 import android.widget.Toast
+import kotlin.random.Random
+import android.media.MediaPlayer
 
 class MyView(context: Context) : SurfaceView(context) {
 
+    private lateinit var leftEdge: Edge
+    private lateinit var rightEdge: Edge
     private lateinit var player: Player
     private lateinit var bottom: Bottom
+
+    private val enemyDeathSound = MediaPlayer.create(context, R.raw.enemydeath)
+    private val shootSound = MediaPlayer.create(context, R.raw.shoot)
+    private val enemytouchedSound = MediaPlayer.create(context, R.raw.enemytouched)
+
     var isMovingLeft = false
     var isMovingRight = false
     var canShoot = true
+
     val bullets = mutableListOf<Bullet>()
     val enemies = mutableListOf<Enemy>()
+
     private val handler = Handler(Looper.getMainLooper())
     private var direction = 0
     var killedEnemies = 0
-    private var NumberofEnemies = 0
-    private val restartHandler = Handler(Looper.getMainLooper())
+    private var numberOfEnemies = 0
     private var gameOver = false
-    private var enemyMovementRunnable: Runnable? = null
     private var gameEnded = false
-
-
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
         player = Player(w / 2f - 100, 1900f)
         bottom = Bottom(w / 2f - 100, 2000f)
+        leftEdge = Edge(0f, 0f)
+        rightEdge = Edge(width - 50f, 0f)
 
         val enemyWidth = 60f
         val enemyHeight = 60f
         val numRows = 2
-        val numCols = 4
-        NumberofEnemies = numRows * numCols
+        val numCols = 2
+        numberOfEnemies = numRows * numCols
         val spacing = 100f
-        val xOffset = 0f
+        val xOffset = 100f
         val yOffset = 0f
 
         for (row in 0 until numRows) {
             for (col in 0 until numCols) {
                 val x = col * (enemyWidth + spacing) + xOffset
                 val y = row * (enemyHeight + spacing) + yOffset
-                enemies.add(Enemy(x, y, 100))
+                val enemy = Enemy(x, y, (1..3).random())
+
+                enemies.add(enemy)
             }
-        }
-
-        startEnemyMovement()
-    }
-
-    private fun startEnemyMovement() {
-        direction = 0 // reset direction
-
-        // supprime l'ancien handler si relance
-        enemyMovementRunnable?.let { handler.removeCallbacks(it) }
-
-        enemyMovementRunnable = object : Runnable {
-            override fun run() {
-                when (direction) {
-                    0 -> updateEnemyDirection(0f, 5f)
-                    1 -> updateEnemyDirection(5f, 5f)
-                    2 -> updateEnemyDirection(0f, 5f)
-                    3 -> updateEnemyDirection(-5f, 5f)
-                }
-                direction = (direction + 1) % 4
-                handler.postDelayed(this, 1000)
-            }
-        }
-
-        handler.postDelayed(enemyMovementRunnable!!, 250)
-    }
-
-    private fun updateEnemyDirection(speedX: Float, speedY: Float) {
-        for (enemy in enemies) {
-            enemy.updateDirection(speedX, speedY)
         }
     }
 
@@ -93,20 +73,19 @@ class MyView(context: Context) : SurfaceView(context) {
                     val x = event.getX(i)
                     val y = event.getY(i)
 
-                    val leftZone = x < measuredWidth / 2f - 100 && y > 2000
-                    val rightZone = x > measuredWidth / 2f + 100 && y > 2000
+                    val leftZone = x < measuredWidth / 2f - 100 && y > 1800
+                    val rightZone = x > measuredWidth / 2f + 100 && y > 1800
                     val shootZone = !(leftZone || rightZone)
 
-                    if (leftZone) {
-                        isMovingLeft = true
-                    } else if (rightZone) {
-                        isMovingRight = true
-                    }
+                    if (leftZone) isMovingLeft = true
+                    if (rightZone) isMovingRight = true
 
                     if (shootZone && canShoot) {
                         val bullet = player.weapon.fire(player.Body.centerX(), player.Body.top)
                         bullets.add(bullet)
                         canShoot = false
+                        shootSound.start()
+
                     }
                 }
             }
@@ -117,13 +96,13 @@ class MyView(context: Context) : SurfaceView(context) {
                 canShoot = true
             }
         }
-
         return true
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
+        // Gestion du joueur
         player.speedX = when {
             isMovingLeft -> -10f
             isMovingRight -> 10f
@@ -131,44 +110,62 @@ class MyView(context: Context) : SurfaceView(context) {
         }
 
         player.move()
+
+        // Collision avec les bords du joueur
+        if (player.Body.left < 0f) player.Body.offsetTo(0f, player.Body.top)
+        if (player.Body.right > width) player.Body.offsetTo(width - player.Body.width(), player.Body.top)
+
         player.draw(canvas)
 
-        val iterator = bullets.iterator()
-        while (iterator.hasNext()) {
-            val bullet = iterator.next()
+        // Bullets
+        val bulletIterator = bullets.iterator()
+        while (bulletIterator.hasNext()) {
+            val bullet = bulletIterator.next()
             bullet.move()
             bullet.draw(canvas)
-
-            if (bullet.y + bullet.height < 0) {
-                iterator.remove()
-            }
+            if (bullet.y + bullet.height < 0) bulletIterator.remove()
         }
+
+        // Enemies
         for (enemy in enemies) {
             enemy.move()
-            enemy.draw(canvas)
-
-            if (bottom.isTouchedBy(enemy)) {
-                if (!gameOver) {   // ← évite de le déclencher plusieurs fois
+            if (bottom.isTouchedByThisEnemy(enemy) || enemy.y > player.y) {
+                if (!gameOver) {
                     gameOver = true
                     enemies.clear()
-                    showGameOver(context.getString(R.string.lose)) // ← directement ici
+                    showGameOver(context.getString(R.string.lose))
                 }
-                break // ← on arrête la boucle
+                break
             }
+
+            // Rebond sur bords gauche et droit
+            if (enemy.r.left <= 0f || enemy.r.right >= width) {
+                enemy.bounceX()
+            }
+
+            enemy.draw(canvas)
+            for (i in enemies.indices) {
+                for (j in i + 1 until enemies.size) {
+                    if (enemies[i].isTouchingAnOtherEnnemy(enemies[j])) {
+                        // Réaction ici, par ex :
+                        enemies[i].bounceX()
+                        enemies[j].bounceX()
+                    }
+                }
+            }
+
+
         }
 
-
-        checkCollisions()
+        checkCollisionsBetweenBulletAndEnnemy()
         invalidate()
-        if (killedEnemies == NumberofEnemies && !gameOver && !gameEnded) {
+
+        if (killedEnemies == numberOfEnemies && !gameOver && !gameEnded) {
             gameOver = true
             showGameOver(context.getString(R.string.win))
-            return
         }
-
-
-
     }
+
     private fun showGameOver(message: String) {
         gameOver = false
         gameEnded = true
@@ -182,52 +179,41 @@ class MyView(context: Context) : SurfaceView(context) {
 
     private fun restartGame() {
         gameEnded = false
-        enemies.clear()
-        bullets.clear()
-        killedEnemies = 0
         gameOver = false
-        direction = 0 // reset movement direction
+        killedEnemies = 0
+        bullets.clear()
+        enemies.clear()
 
-        // recréer le joueur et le fond si nécessaire (optionnel si toujours valide)
-        player = Player(width / 2f - 100, 1900f)
-        bottom = Bottom(width / 2f - 100, 2000f)
-
-        val enemyWidth = 60f
-        val enemyHeight = 60f
-        val numRows = 2
-        val numCols = 4
-        val spacing = 100f
-        val xOffset = 0f
-        val yOffset = 0f
-
-        for (row in 0 until numRows) {
-            for (col in 0 until numCols) {
-                val x = col * (enemyWidth + spacing) + xOffset
-                val y = row * (enemyHeight + spacing) + yOffset
-                enemies.add(Enemy(x, y, 100))
-            }
-        }
-
-        startEnemyMovement()
+        onSizeChanged(width, height, width, height)
     }
 
-
-
-    private fun checkCollisions() {
+    private fun checkCollisionsBetweenBulletAndEnnemy() {
         val bulletIterator = bullets.iterator()
         while (bulletIterator.hasNext()) {
             val bullet = bulletIterator.next()
             val enemyIterator = enemies.iterator()
+
             while (enemyIterator.hasNext()) {
                 val enemy = enemyIterator.next()
+
+                // Vérifier si la balle touche l'ennemi
                 if (RectF.intersects(bullet.r, enemy.r)) {
-                    bulletIterator.remove()
-                    enemyIterator.remove()
-                    killedEnemies = killedEnemies + 1
-                    break
-                }
+                    // Appliquer des dégâts à l'ennemi
+                    enemy.takeDamage()
+                    enemytouchedSound.start()
+
+                    // Si l'ennemi est mort (sa santé est à 0), on le retire de la liste
+                    if (enemy.health == 0) {
+                        enemyIterator.remove() // Retirer l'ennemi de la liste
+                        killedEnemies++ // Augmenter le compteur de morts
+                        enemyDeathSound.start()
+                    }
+
+                    bulletIterator.remove() // Retirer la balle qui a touché l'ennemi
+                    break // Sortir de la boucle d'ennemis, car une balle
+
+}
             }
         }
     }
-
 }

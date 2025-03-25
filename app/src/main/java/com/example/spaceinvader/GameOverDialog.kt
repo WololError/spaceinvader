@@ -10,13 +10,17 @@ class GameOverDialog(
     private val onRestart: () -> Unit
 ) : DialogFragment() {
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        isCancelable = false // 🔒 empêche le clic en dehors
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireContext())
             .setTitle(message)
             .setPositiveButton(requireContext().getString(R.string.reset_game)) { _, _ ->
-            onRestart()
+                onRestart()
             }
-            .setCancelable(false)
             .create()
     }
 }

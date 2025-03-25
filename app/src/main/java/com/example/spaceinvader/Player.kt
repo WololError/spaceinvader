@@ -7,9 +7,9 @@ import android.graphics.RectF
 
 class Player(x: Float, y: Float) : Entity(x, y, 200f, 60f, 0f, 0f), Movable {
 
-    val Body = RectF(x, y, x + width, y + height)
-    val paint = Paint()
-    val Head = Paint()
+    var Body = RectF(x, y, x + width, y + height)
+    private var paint = Paint()
+    private var Head = Paint()
     var weapon = Weapon()
 
     init {
