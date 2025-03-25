@@ -11,7 +11,7 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
     x, y,
     60f, 60f,
     listOf(-5f, 5f).random(),
-    5f
+    3f
 ), Movable {
     val r = RectF(x, y, x + width, y + height)
     val paint = Paint()
@@ -43,6 +43,8 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
     }
     fun isTouchingAnOtherEnnemy(other: Enemy): Boolean {
         return RectF.intersects(this.r, other.r)
+
+
     }
     fun takeDamage() {
         if (health - 1 <= 0) {
@@ -51,6 +53,8 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
             health -= 1
         }
     }
-
+    fun isTouchingBottom(bottom: Bottom): Boolean {
+        return RectF.intersects(this.r, bottom.body)
+    }
 
 }

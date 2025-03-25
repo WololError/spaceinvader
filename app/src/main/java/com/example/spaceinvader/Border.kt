@@ -4,13 +4,13 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 
-abstract class Border(protected val body: RectF, protected val paint: Paint) {
+abstract class Border(val body: RectF, protected val paint: Paint) {
 
     fun draw(canvas: Canvas) {
         canvas.drawRect(body, paint)
     }
 
-    fun isTouchedByThisEnemy(enemy: Enemy): Boolean {
+    open fun isTouchedByThisEnemy(enemy: Enemy): Boolean {
         return RectF.intersects(body, enemy.r)
     }
 

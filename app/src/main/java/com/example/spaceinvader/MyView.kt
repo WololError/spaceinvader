@@ -16,21 +16,17 @@ class MyView(context: Context) : SurfaceView(context) {
     private lateinit var rightEdge: Edge
     private lateinit var player: Player
     private lateinit var bottom: Bottom
+    private val bullets = mutableListOf<Bullet>()
+    private val enemies = mutableListOf<Enemy>()
 
     private val enemyDeathSound = MediaPlayer.create(context, R.raw.enemydeath)
     private val shootSound = MediaPlayer.create(context, R.raw.shoot)
-    private val enemytouchedSound = MediaPlayer.create(context, R.raw.enemytouched)
 
-    var isMovingLeft = false
-    var isMovingRight = false
-    var canShoot = true
+    private var isMovingLeft = false
+    private var isMovingRight = false
+    private var canShoot = true
 
-    val bullets = mutableListOf<Bullet>()
-    val enemies = mutableListOf<Enemy>()
-
-    private val handler = Handler(Looper.getMainLooper())
-    private var direction = 0
-    var killedEnemies = 0
+    private var killedEnemies = 0
     private var numberOfEnemies = 0
     private var gameOver = false
     private var gameEnded = false
@@ -129,7 +125,8 @@ class MyView(context: Context) : SurfaceView(context) {
         // Enemies
         for (enemy in enemies) {
             enemy.move()
-            if (bottom.isTouchedByThisEnemy(enemy) || enemy.y > player.y) {
+
+            if (enemy.isTouchingBottom(bottom) || enemy.y > player.y) {
                 if (!gameOver) {
                     gameOver = true
                     enemies.clear()
@@ -147,7 +144,6 @@ class MyView(context: Context) : SurfaceView(context) {
             for (i in enemies.indices) {
                 for (j in i + 1 until enemies.size) {
                     if (enemies[i].isTouchingAnOtherEnnemy(enemies[j])) {
-                        // Réaction ici, par ex :
                         enemies[i].bounceX()
                         enemies[j].bounceX()
                     }
@@ -200,7 +196,7 @@ class MyView(context: Context) : SurfaceView(context) {
                 if (RectF.intersects(bullet.r, enemy.r)) {
                     // Appliquer des dégâts à l'ennemi
                     enemy.takeDamage()
-                    enemytouchedSound.start()
+
 
                     // Si l'ennemi est mort (sa santé est à 0), on le retire de la liste
                     if (enemy.health == 0) {
