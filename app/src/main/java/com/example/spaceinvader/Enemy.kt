@@ -19,8 +19,8 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
     init {
         when (this.health) {
             1 -> paint.color = Color.RED
-            2 -> paint.color = Color.rgb(128, 0, 128) // PURPLE
-            3 -> paint.color = Color.rgb(255, 192, 203) // PINK
+            2 -> paint.color = Color.rgb(142, 68, 173) // PURPLE
+            3 -> paint.color = Color.rgb(255, 0, 255) // PINK
         }
     }
 
@@ -55,6 +55,9 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
     }
     fun isTouchingBottom(bottom: Bottom): Boolean {
         return RectF.intersects(this.r, bottom.body)
+    }
+    fun isFacingPlayer(player: Player): Boolean {
+        return (this.r.left < player.Body.right && this.r.right > player.Body.left)
     }
 
 }
