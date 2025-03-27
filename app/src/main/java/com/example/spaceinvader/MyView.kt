@@ -195,7 +195,7 @@ class MyView(context: Context) : SurfaceView(context) {
                 // Vérifier si la balle touche l'ennemi
                 if (RectF.intersects(bullet.r, enemy.r)) {
                     // Appliquer des dégâts à l'ennemi
-                    enemy.takeDamage()
+                    enemy.takeDamage(bullet)
 
 
                     // Si l'ennemi est mort (sa santé est à 0), on le retire de la liste

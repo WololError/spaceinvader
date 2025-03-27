@@ -46,11 +46,11 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
 
 
     }
-    fun takeDamage() {
-        if (health - 1 <= 0) {
+    fun takeDamage(bullet: Bullet) {
+        if (health - bullet.damage <= 0) {
             health = 0
         } else {
-            health -= 1
+            health = health - bullet.damage
         }
     }
     fun isTouchingBottom(bottom: Bottom): Boolean {

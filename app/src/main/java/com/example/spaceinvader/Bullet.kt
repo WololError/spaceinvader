@@ -6,7 +6,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 
 class Bullet(x: Float, y: Float) : Entity(x, y, 10f, 40f, 0f, -20f), Movable {
-
+    var damage : Int = 0
     val r = RectF(x, y, x + width, y + height)
     val paint = Paint()
 
