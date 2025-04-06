@@ -11,7 +11,7 @@ abstract class Border(val body: RectF, protected val paint: Paint) {
     }
 
     open fun isTouchedByThisEnemy(enemy: Enemy): Boolean {
-        return RectF.intersects(body, enemy.r)
+        return RectF.intersects(body, enemy.triangle)
     }
 
     fun isTouchedByThePlayer(player: Player): Boolean {

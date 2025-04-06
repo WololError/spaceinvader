@@ -5,15 +5,14 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Path
-import kotlin.random.Random
 
-class Enemy(x: Float, y: Float, var health: Int) : Entity(
+class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
     x, y,
     60f, 60f,
     listOf(-5f, 5f).random(),
     3f
 ), Movable {
-    val r = RectF(x, y, x + width, y + height)
+    val triangle = RectF(x, y, x + width, y + height)
     val paint = Paint()
 
     init {
@@ -26,26 +25,26 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
 
     fun draw(canvas: Canvas) {
         val path = Path()
-        path.moveTo(r.left, r.top)
-        path.lineTo(r.right, r.top)
-        path.lineTo(r.centerX(), r.bottom)
+        path.moveTo(triangle.left, triangle.top)
+        path.lineTo(triangle.right, triangle.top)
+        path.lineTo(triangle.centerX(), triangle.bottom)
         path.close()
 
         canvas.drawPath(path, paint)
     }
 
     override fun move() {
-        r.offset(speedX, speedY)
+        triangle.offset(speedX, speedY)
     }
 
     fun bounceX() {
         speedX *= -1
     }
+
     fun isTouchingAnOtherEnnemy(other: Enemy): Boolean {
-        return RectF.intersects(this.r, other.r)
-
-
+        return RectF.intersects(this.triangle, other.triangle)
     }
+
     fun takeDamage(bullet: Bullet) {
         if (health - bullet.damage <= 0) {
             health = 0
@@ -53,11 +52,12 @@ class Enemy(x: Float, y: Float, var health: Int) : Entity(
             health = health - bullet.damage
         }
     }
-    fun isTouchingBottom(bottom: Bottom): Boolean {
-        return RectF.intersects(this.r, bottom.body)
-    }
-    fun isFacingPlayer(player: Player): Boolean {
-        return (this.r.left < player.Body.right && this.r.right > player.Body.left)
+
+    fun isTouchingBottom(): Boolean {
+        return RectF.intersects(this.triangle, bottom.body)
     }
 
+    fun isFacingPlayer(player: Player): Boolean {
+        return (this.triangle.left < player.Body.right && this.triangle.right > player.Body.left)
+    }
 }

@@ -1,21 +1,20 @@
 package com.example.spaceinvader
+
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.RectF
-import android.os.Handler
-import android.os.Looper
 import android.view.MotionEvent
 import android.view.SurfaceView
-import android.widget.Toast
-import kotlin.random.Random
 import android.media.MediaPlayer
 
 class MyView(context: Context) : SurfaceView(context) {
 
+
     private lateinit var leftEdge: Edge
     private lateinit var rightEdge: Edge
-    private lateinit var player: Player
     private lateinit var bottom: Bottom
+    private lateinit var player: Player
+
     private val bullets = mutableListOf<Bullet>()
     private val enemies = mutableListOf<Enemy>()
 
@@ -34,7 +33,9 @@ class MyView(context: Context) : SurfaceView(context) {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        player = Player(w / 2f - 100, 1900f)
+        // On récupère l'instance unique du Player
+        player = Player.getInstance(w / 2f - 100, 1900f)
+
         bottom = Bottom(w / 2f - 100, 2000f)
         leftEdge = Edge(0f, 0f)
         rightEdge = Edge(width - 50f, 0f)
@@ -52,8 +53,7 @@ class MyView(context: Context) : SurfaceView(context) {
             for (col in 0 until numCols) {
                 val x = col * (enemyWidth + spacing) + xOffset
                 val y = row * (enemyHeight + spacing) + yOffset
-                val enemy = Enemy(x, y, (1..3).random())
-
+                val enemy = Enemy(x, y, (1..3).random(), bottom)
                 enemies.add(enemy)
             }
         }
@@ -61,7 +61,10 @@ class MyView(context: Context) : SurfaceView(context) {
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_MOVE -> {
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_POINTER_DOWN,
+            MotionEvent.ACTION_MOVE -> {
+
                 isMovingLeft = false
                 isMovingRight = false
 
@@ -77,16 +80,17 @@ class MyView(context: Context) : SurfaceView(context) {
                     if (rightZone) isMovingRight = true
 
                     if (shootZone && canShoot) {
+                        // On crée un bullet via l'arme du joueur
                         val bullet = player.weapon.fire(player.Body.centerX(), player.Body.top)
                         bullets.add(bullet)
                         canShoot = false
                         shootSound.start()
-
                     }
                 }
             }
 
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_POINTER_UP -> {
                 isMovingLeft = false
                 isMovingRight = false
                 canShoot = true
@@ -104,13 +108,17 @@ class MyView(context: Context) : SurfaceView(context) {
             isMovingRight -> 10f
             else -> 0f
         }
-
         player.move()
 
-        // Collision avec les bords du joueur
-        if (player.Body.left < 0f) player.Body.offsetTo(0f, player.Body.top)
-        if (player.Body.right > width) player.Body.offsetTo(width - player.Body.width(), player.Body.top)
+        // Collision avec les bords pour le joueur
+        if (player.Body.left < 0f) {
+            player.Body.offsetTo(0f, player.Body.top)
+        }
+        if (player.Body.right > width) {
+            player.Body.offsetTo(width - player.Body.width(), player.Body.top)
+        }
 
+        // Dessin du joueur
         player.draw(canvas)
 
         // Bullets
@@ -119,14 +127,17 @@ class MyView(context: Context) : SurfaceView(context) {
             val bullet = bulletIterator.next()
             bullet.move()
             bullet.draw(canvas)
-            if (bullet.y + bullet.height < 0) bulletIterator.remove()
+            if (bullet.y + bullet.height < 0) {
+                bulletIterator.remove()
+            }
         }
 
         // Enemies
         for (enemy in enemies) {
             enemy.move()
 
-            if (enemy.isTouchingBottom(bottom) || enemy.y > player.y) {
+            // Si un ennemi touche le bas ou dépasse le joueur => game over
+            if (enemy.isTouchingBottom() || enemy.y > player.y) {
                 if (!gameOver) {
                     gameOver = true
                     enemies.clear()
@@ -135,12 +146,15 @@ class MyView(context: Context) : SurfaceView(context) {
                 break
             }
 
-            // Rebond sur bords gauche et droit
-            if (enemy.r.left <= 0f || enemy.r.right >= width) {
+            // Rebond sur les bords
+            if (enemy.triangle.left <= 0f || enemy.triangle.right >= width) {
                 enemy.bounceX()
             }
 
+            // Dessin
             enemy.draw(canvas)
+
+            // Collision entre ennemis eux-mêmes
             for (i in enemies.indices) {
                 for (j in i + 1 until enemies.size) {
                     if (enemies[i].isTouchingAnOtherEnnemy(enemies[j])) {
@@ -149,13 +163,14 @@ class MyView(context: Context) : SurfaceView(context) {
                     }
                 }
             }
-
-
         }
 
         checkCollisionsBetweenBulletAndEnnemy()
+
+        // On redessine en continu
         invalidate()
 
+        // Victoire si tous les ennemis sont morts
         if (killedEnemies == numberOfEnemies && !gameOver && !gameEnded) {
             gameOver = true
             showGameOver(context.getString(R.string.win))
@@ -191,24 +206,18 @@ class MyView(context: Context) : SurfaceView(context) {
 
             while (enemyIterator.hasNext()) {
                 val enemy = enemyIterator.next()
-
-                // Vérifier si la balle touche l'ennemi
-                if (RectF.intersects(bullet.r, enemy.r)) {
-                    // Appliquer des dégâts à l'ennemi
+                if (RectF.intersects(bullet.r, enemy.triangle)) {
+                    // Impact
                     enemy.takeDamage(bullet)
 
-
-                    // Si l'ennemi est mort (sa santé est à 0), on le retire de la liste
                     if (enemy.health == 0) {
-                        enemyIterator.remove() // Retirer l'ennemi de la liste
-                        killedEnemies++ // Augmenter le compteur de morts
+                        enemyIterator.remove()  // Ennemi mort, on le retire
+                        killedEnemies++
                         enemyDeathSound.start()
                     }
-
-                    bulletIterator.remove() // Retirer la balle qui a touché l'ennemi
-                    break // Sortir de la boucle d'ennemis, car une balle
-
-}
+                    bulletIterator.remove()  // La balle est consommée
+                    break // On sort de la boucle, balle déjà utilisée
+                }
             }
         }
     }
