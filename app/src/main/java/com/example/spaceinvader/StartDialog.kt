@@ -5,9 +5,9 @@ import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 
-class GameOverDialog(
-    private val message: String,
-    private val onRestart: () -> Unit
+class StartDialog(
+    private val onStartNormalMode: () -> Unit,
+    private val onStartEndlessMode: () -> Unit
 ) : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,9 +17,13 @@ class GameOverDialog(
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireContext())
-            .setTitle(message)
-            .setPositiveButton(requireContext().getString(R.string.reset_game)) { _, _ ->
-                onRestart()
+            .setTitle(R.string.welcome_title)
+            .setMessage(R.string.rules_text)
+            .setPositiveButton("Normal Mode") { _, _ ->
+                onStartNormalMode()
+            }
+            .setNegativeButton("Endless Mode") { _, _ ->
+                onStartEndlessMode()
             }
             .create()
     }

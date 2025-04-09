@@ -10,7 +10,7 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
     x, y,
     60f, 60f,
     listOf(-5f, 5f).random(),
-    3f
+    8f
 ), Movable {
     val triangle = RectF(x, y, x + width, y + height)
     val paint = Paint()
