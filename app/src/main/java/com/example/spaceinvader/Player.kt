@@ -50,8 +50,7 @@ class Player private constructor(
             }
             return INSTANCE!!
         }
-
-
+        
         fun resetSingleton() {
             INSTANCE = null
         }

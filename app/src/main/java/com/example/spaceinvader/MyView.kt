@@ -2,6 +2,8 @@ package com.example.spaceinvader
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.SurfaceView
@@ -27,15 +29,16 @@ class MyView(context: Context) : SurfaceView(context) {
     private var isMovingRight = false
     private var canShoot = true
 
-    private var killedEnemies = 0
     private var numberOfEnemies = 0
     private var gameOver = false
     private var gameEnded = false
     private var isGameStarted = false
-
     private var isEndlessMode = false
+
     private val spawnHandler = Handler(Looper.getMainLooper())
     private var spawnRunnable: Runnable? = null
+
+    private val scoreManager = ScoreManager()
 
     init {
         showStartDialog()
@@ -191,13 +194,22 @@ class MyView(context: Context) : SurfaceView(context) {
         }
 
         checkCollisionsBetweenBulletAndEnnemy()
+        drawScore(canvas)
 
         invalidate()
 
-        if (!isEndlessMode && killedEnemies == numberOfEnemies && !gameOver && !gameEnded) {
+        if (!isEndlessMode && scoreManager.score == numberOfEnemies && !gameOver && !gameEnded) {
             gameOver = true
             showGameOver(context.getString(R.string.win))
         }
+    }
+
+    private fun drawScore(canvas: Canvas) {
+        val paint = Paint().apply {
+            color = Color.WHITE
+            textSize = 60f
+        }
+        canvas.drawText("Score: ${scoreManager.score}", 50f, 100f, paint)
     }
 
     private fun showGameOver(message: String) {
@@ -210,7 +222,7 @@ class MyView(context: Context) : SurfaceView(context) {
             var finalMessage = message
 
             if (isEndlessMode) {
-                finalMessage += "\nEnnemis tués : $killedEnemies"
+                finalMessage += "\nEnnemis tués : ${scoreManager.score}"
             } else {
                 finalMessage += "\n "
             }
@@ -225,7 +237,7 @@ class MyView(context: Context) : SurfaceView(context) {
     private fun restartGame() {
         gameEnded = false
         gameOver = false
-        killedEnemies = 0
+        scoreManager.score = 0
         bullets.clear()
         enemies.clear()
         onSizeChanged(width, height, width, height)
@@ -244,7 +256,7 @@ class MyView(context: Context) : SurfaceView(context) {
 
                     if (enemy.health == 0) {
                         enemyIterator.remove()
-                        killedEnemies++
+                        scoreManager.onEnemyKilled()
                         enemyDeathSound.start()
                     }
                     bulletIterator.remove()
@@ -259,7 +271,7 @@ class MyView(context: Context) : SurfaceView(context) {
             override fun run() {
                 if (!gameOver) {
                     spawnEnemy()
-                    spawnHandler.postDelayed(this, 1000) // Toutes les 3 sec
+                    spawnHandler.postDelayed(this, 1000)
                 }
             }
         }
