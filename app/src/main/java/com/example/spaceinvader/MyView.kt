@@ -178,7 +178,7 @@ class MyView(context: Context) : SurfaceView(context) {
             else -> 0f
         }
         player.move()
-        player.clampToEdges(leftEdge, rightEdge)
+        player.restrictMovementToEdges(leftEdge, rightEdge)
         player.draw(canvas)
     }
 

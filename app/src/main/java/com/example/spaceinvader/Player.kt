@@ -36,7 +36,7 @@ class Player private constructor(
         canvas.drawRect(frontRect, Head)
     }
 
-    fun clampToEdges(leftEdge: Edge, rightEdge: Edge) {
+    fun restrictMovementToEdges(leftEdge: Edge, rightEdge: Edge) {
         if (body.left < leftEdge.body.right) {
             body.offsetTo(leftEdge.body.right, body.top)
         }
