@@ -17,14 +17,21 @@ class StartDialog(
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireContext())
-            .setTitle(R.string.welcome_title)
-            .setMessage(R.string.rules_text)
-            .setPositiveButton("Normal Mode") { _, _ ->
+            .setTitle(getString(R.string.welcome_title))
+            .setMessage(
+                getString(R.string.rules_text) +  "\n\n" +
+                        getString(R.string.Rouge) +
+                        getString(R.string.Mauve) +
+                        getString(R.string.Rose)
+            )
+
+            .setPositiveButton(getString(R.string.Normal)) { _, _ ->
                 onStartNormalMode()
             }
-            .setNegativeButton("Endless Mode") { _, _ ->
+            .setNegativeButton(getString(R.string.endless)) { _, _ ->
                 onStartEndlessMode()
             }
             .create()
     }
+
 }

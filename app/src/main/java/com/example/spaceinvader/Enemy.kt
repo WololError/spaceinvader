@@ -11,9 +11,7 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
     60f, 60f,
     listOf(-5f, 5f).random(),
     6f
-), Movable {
-    val triangle = RectF(x, y, x + width, y + height)
-    val paint = Paint()
+) {
 
     init {
         when (this.health) {
@@ -23,26 +21,23 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
         }
     }
 
-    fun draw(canvas: Canvas) {
+    override fun draw(canvas: Canvas) {
         val path = Path()
-        path.moveTo(triangle.left, triangle.top)
-        path.lineTo(triangle.right, triangle.top)
-        path.lineTo(triangle.centerX(), triangle.bottom)
+        path.moveTo(body.left, body.top)
+        path.lineTo(body.right, body.top)
+        path.lineTo(body.centerX(), body.bottom)
         path.close()
 
         canvas.drawPath(path, paint)
     }
 
-    override fun move() {
-        triangle.offset(speedX, speedY)
-    }
 
     fun bounceX() {
         speedX *= -1
     }
 
     fun isTouchingAnOtherEnnemy(other: Enemy): Boolean {
-        return RectF.intersects(this.triangle, other.triangle)
+        return RectF.intersects(this.body, other.body)
     }
 
     fun takeDamage(bullet: Bullet) {
@@ -54,6 +49,18 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
     }
 
     fun isTouchingBottom(): Boolean {
-        return RectF.intersects(this.triangle, bottom.body)
+        return RectF.intersects(this.body, bottom.body)
     }
+
+    fun isHitBy(bullet: Bullet): Boolean {
+        return RectF.intersects(this.body, bullet.body)
+    }
+
+    fun bounceIfTouchingBorders(leftEdge: Edge, rightEdge: Edge) {
+        if (RectF.intersects(this.body, leftEdge.body) || RectF.intersects(this.body, rightEdge.body)) {
+            bounceX()
+        }
+    }
+
+
 }

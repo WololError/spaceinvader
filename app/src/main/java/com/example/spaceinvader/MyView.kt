@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.SurfaceView
 import android.os.Handler
@@ -105,8 +104,11 @@ class MyView(context: Context) : SurfaceView(context) {
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_MOVE -> {
+                // Reset d'abord
                 isMovingLeft = false
                 isMovingRight = false
+
+                var shootingDetected = false
 
                 for (i in 0 until event.pointerCount) {
                     val x = event.getX(i)
@@ -119,20 +121,39 @@ class MyView(context: Context) : SurfaceView(context) {
                     if (leftZone) isMovingLeft = true
                     if (rightZone) isMovingRight = true
 
-                    if (shootZone && canShoot) {
-                        val bullet = player.weapon.fire(player.Body.centerX(), player.Body.top)
+                    if (shootZone && canShoot && !shootingDetected) {
+                        val bullet = player.weapon.fire(player.body.centerX(), player.body.top)
                         bullets.add(bullet)
                         canShoot = false
                         shootSound.start()
+                        shootingDetected = true
                     }
                 }
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                // Un doigt vient d’être retiré → on doit refaire l'analyse des doigts restants
+
                 isMovingLeft = false
                 isMovingRight = false
+
+                val activePointerCount = event.pointerCount - 1 // Car un doigt vient d'être retiré
+
+                for (i in 0 until activePointerCount) {
+                    val x = event.getX(i)
+                    val y = event.getY(i)
+
+                    val leftZone = x < measuredWidth / 2f - 100 && y > 1800
+                    val rightZone = x > measuredWidth / 2f + 100 && y > 1800
+
+                    if (leftZone) isMovingLeft = true
+                    if (rightZone) isMovingRight = true
+                }
+
                 canShoot = true
             }
         }
+
         return true
     }
 
@@ -141,21 +162,28 @@ class MyView(context: Context) : SurfaceView(context) {
 
         if (!isGameStarted) return
 
+        updatePlayer()
+        player.draw(canvas)
+        updateBullets(canvas)
+        updateEnemies(canvas)
+        checkCollisionsBetweenBulletAndEnemy()
+        checkVictoryCondition()
+        drawScore(canvas)
+
+        invalidate()
+    }
+
+    private fun updatePlayer() {
         player.speedX = when {
             isMovingLeft -> -10f
             isMovingRight -> 10f
             else -> 0f
         }
         player.move()
+        player.clampToScreen(width)
+    }
 
-        if (player.Body.left < 0f) {
-            player.Body.offsetTo(0f, player.Body.top)
-        }
-        if (player.Body.right > width) {
-            player.Body.offsetTo(width - player.Body.width(), player.Body.top)
-        }
-        player.draw(canvas)
-
+    private fun updateBullets(canvas: Canvas) {
         val bulletIterator = bullets.iterator()
         while (bulletIterator.hasNext()) {
             val bullet = bulletIterator.next()
@@ -163,8 +191,12 @@ class MyView(context: Context) : SurfaceView(context) {
             bullet.draw(canvas)
             if (bullet.y + bullet.height < 0) bulletIterator.remove()
         }
+    }
 
-        for (enemy in enemies) {
+    private fun updateEnemies(canvas: Canvas) {
+        val enemyIterator = enemies.iterator()
+        while (enemyIterator.hasNext()) {
+            val enemy = enemyIterator.next()
             enemy.move()
 
             if (enemy.isTouchingBottom() || enemy.y > player.y) {
@@ -177,27 +209,13 @@ class MyView(context: Context) : SurfaceView(context) {
                 break
             }
 
-            if (enemy.triangle.left <= 0f || enemy.triangle.right >= width) {
-                enemy.bounceX()
-            }
-
+            enemy.bounceIfTouchingBorders(leftEdge, rightEdge)
             enemy.draw(canvas)
-
-            for (i in enemies.indices) {
-                for (j in i + 1 until enemies.size) {
-                    if (enemies[i].isTouchingAnOtherEnnemy(enemies[j])) {
-                        enemies[i].bounceX()
-                        enemies[j].bounceX()
-                    }
-                }
-            }
         }
+        checkCollisionsBetweenEnemies()
+    }
 
-        checkCollisionsBetweenBulletAndEnnemy()
-        drawScore(canvas)
-
-        invalidate()
-
+    private fun checkVictoryCondition() {
         if (!isEndlessMode && scoreManager.score == numberOfEnemies && !gameOver && !gameEnded) {
             gameOver = true
             showGameOver(context.getString(R.string.win))
@@ -243,7 +261,7 @@ class MyView(context: Context) : SurfaceView(context) {
         onSizeChanged(width, height, width, height)
     }
 
-    private fun checkCollisionsBetweenBulletAndEnnemy() {
+    private fun checkCollisionsBetweenBulletAndEnemy() {
         val bulletIterator = bullets.iterator()
         while (bulletIterator.hasNext()) {
             val bullet = bulletIterator.next()
@@ -251,16 +269,27 @@ class MyView(context: Context) : SurfaceView(context) {
 
             while (enemyIterator.hasNext()) {
                 val enemy = enemyIterator.next()
-                if (RectF.intersects(bullet.r, enemy.triangle)) {
+                if (enemy.isHitBy(bullet)) {
                     enemy.takeDamage(bullet)
 
                     if (enemy.health == 0) {
                         enemyIterator.remove()
-                        scoreManager.onEnemyKilled()
+                        scoreManager.EnemyKilled()
                         enemyDeathSound.start()
                     }
                     bulletIterator.remove()
                     break
+                }
+            }
+        }
+    }
+
+    private fun checkCollisionsBetweenEnemies() {
+        for (i in enemies.indices) {
+            for (j in i + 1 until enemies.size) {
+                if (enemies[i].isTouchingAnOtherEnnemy(enemies[j])) {
+                    enemies[i].bounceX()
+                    enemies[j].bounceX()
                 }
             }
         }

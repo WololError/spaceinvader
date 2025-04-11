@@ -1,9 +1,9 @@
 package com.example.spaceinvader
 
-class ScoreManager : EnemyDeathObserver {
+class ScoreManager  {
     var score: Int = 0
 
-    override fun onEnemyKilled() {
+    fun EnemyKilled() {
         score += 1
     }
 }

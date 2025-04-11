@@ -8,10 +8,9 @@ import android.graphics.RectF
 class Player private constructor(
     x: Float,
     y: Float
-) : Entity(x, y, 200f, 60f, 0f, 0f), Movable {
+) : Entity(x, y, 200f, 60f, 0f, 0f) {
 
-    var Body = RectF(x, y, x + width, y + height)
-    private var paint = Paint()
+
     private var Head = Paint()
     var weapon = Weapon()
 
@@ -20,13 +19,13 @@ class Player private constructor(
         Head.color = Color.GREEN
     }
 
-    fun draw(canvas: Canvas) {
-        canvas.drawRect(Body, paint)
+    override fun draw(canvas: Canvas) {
+        canvas.drawRect(body, paint)
 
         val size = 20f
         val offsetX = 8f
-        val centerX = Body.centerX() + offsetX
-        val topY = Body.top
+        val centerX = body.centerX() + offsetX
+        val topY = body.top
 
         val frontRect = RectF(
             centerX - size / 2f,
@@ -37,9 +36,15 @@ class Player private constructor(
         canvas.drawRect(frontRect, Head)
     }
 
-    override fun move() {
-        Body.offset(speedX, speedY)
+    fun clampToScreen(screenWidth: Int) {
+        if (body.left < 0f) {
+            body.offsetTo(0f, body.top)
+        }
+        if (body.right > screenWidth) {
+            body.offsetTo(screenWidth - body.width(), body.top)
+        }
     }
+
 
     companion object {
         private var INSTANCE: Player? = null
