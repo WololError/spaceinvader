@@ -1,6 +1,6 @@
 package com.example.spaceinvader
 
-class Weapon(val damage: Int = 1, val fireRate: Float = 1.0f) {
+class Weapon(val damage: Int = 1) {
 
     fun fire(x: Float, y: Float): Bullet {
         val bullet = Bullet(x, y)

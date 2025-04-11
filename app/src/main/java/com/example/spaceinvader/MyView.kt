@@ -104,7 +104,7 @@ class MyView(context: Context) : SurfaceView(context) {
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_MOVE -> {
-                // Reset d'abord
+
                 isMovingLeft = false
                 isMovingRight = false
 
@@ -132,12 +132,12 @@ class MyView(context: Context) : SurfaceView(context) {
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-                // Un doigt vient d’être retiré → on doit refaire l'analyse des doigts restants
+
 
                 isMovingLeft = false
                 isMovingRight = false
 
-                val activePointerCount = event.pointerCount - 1 // Car un doigt vient d'être retiré
+                val activePointerCount = event.pointerCount - 1
 
                 for (i in 0 until activePointerCount) {
                     val x = event.getX(i)
@@ -166,7 +166,6 @@ class MyView(context: Context) : SurfaceView(context) {
         player.draw(canvas)
         updateBullets(canvas)
         updateEnemies(canvas)
-        checkCollisionsBetweenBulletAndEnemy()
         checkVictoryCondition()
         drawScore(canvas)
 
@@ -213,6 +212,7 @@ class MyView(context: Context) : SurfaceView(context) {
             enemy.draw(canvas)
         }
         checkCollisionsBetweenEnemies()
+        checkCollisionsBetweenBulletAndEnemy()
     }
 
     private fun checkVictoryCondition() {
