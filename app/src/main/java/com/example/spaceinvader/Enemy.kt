@@ -57,10 +57,16 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
     }
 
     fun bounceIfTouchingBorders(leftEdge: Edge, rightEdge: Edge) {
-        if (RectF.intersects(this.body, leftEdge.body) || RectF.intersects(this.body, rightEdge.body)) {
+        if (RectF.intersects(body, leftEdge.body)) {
             bounceX()
+            body.offset(5f, 0f)
+        }
+        if (RectF.intersects(body, rightEdge.body)) {
+            bounceX()
+            body.offset(-5f, 0f)
         }
     }
+
 
 
 }

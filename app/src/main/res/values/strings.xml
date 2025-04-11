@@ -4,7 +4,7 @@
     <string name="win">VICTORY ! 🕺 </string>
     <string name="lose">😹🫵</string>
     <string name="welcome_title">Bienvenue dans Space Invader!</string>
-    <string name="rules_text">Appuyer en bas à gauche et droite pour bouger et ailleurs pour tirer </string>
+    <string name="rules_text">Appuyez en bas à gauche et droite pour bouger et ailleurs pour tirer </string>
     <string name="start_game">Jouer</string>
     <string name="Rouge">"Ennemi rouge : 1 PV\n"</string>
     <string name="Mauve">"Ennemi mauve : 2 PV\n"</string>
