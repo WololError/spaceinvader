@@ -162,8 +162,7 @@ class MyView(context: Context) : SurfaceView(context) {
 
         if (!isGameStarted) return
 
-        updatePlayer()
-        player.draw(canvas)
+        updatePlayer(canvas)
         updateBullets(canvas)
         updateEnemies(canvas)
         checkVictoryCondition()
@@ -172,14 +171,15 @@ class MyView(context: Context) : SurfaceView(context) {
         invalidate()
     }
 
-    private fun updatePlayer() {
+    private fun updatePlayer(canvas: Canvas) {
         player.speedX = when {
             isMovingLeft -> -10f
             isMovingRight -> 10f
             else -> 0f
         }
         player.move()
-        player.clampToScreen(width)
+        player.clampToEdges(leftEdge, rightEdge)
+        player.draw(canvas)
     }
 
     private fun updateBullets(canvas: Canvas) {

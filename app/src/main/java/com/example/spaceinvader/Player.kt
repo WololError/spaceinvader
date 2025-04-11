@@ -36,14 +36,15 @@ class Player private constructor(
         canvas.drawRect(frontRect, Head)
     }
 
-    fun clampToScreen(screenWidth: Int) {
-        if (body.left < 0f) {
-            body.offsetTo(0f, body.top)
+    fun clampToEdges(leftEdge: Edge, rightEdge: Edge) {
+        if (body.left < leftEdge.body.right) {
+            body.offsetTo(leftEdge.body.right, body.top)
         }
-        if (body.right > screenWidth) {
-            body.offsetTo(screenWidth - body.width(), body.top)
+        if (body.right > rightEdge.body.left) {
+            body.offsetTo(rightEdge.body.left - body.width(), body.top)
         }
     }
+
 
 
     companion object {
