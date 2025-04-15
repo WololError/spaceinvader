@@ -5,13 +5,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Path
+import android.media.MediaPlayer
+import android.content.Context
 
-class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
-    x, y,
-    60f, 60f,
-    listOf(-5f, 5f).random(),
-    6f
-) {
+class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(x, y, 60f, 60f, listOf(-5f, 5f).random(), 6f) {
 
     init {
         when (this.health) {
@@ -40,13 +37,16 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
         return RectF.intersects(this.body, other.body)
     }
 
-    fun takeDamage(bullet: Bullet) {
+    fun takeDamage(bullet: Bullet, context: Context) {
         if (health - bullet.damage <= 0) {
             health = 0
+            val deathSound = MediaPlayer.create(context, R.raw.enemydeath)
+            deathSound.start()
         } else {
             health = health - bullet.damage
         }
     }
+
 
     fun isTouchingBottom(): Boolean {
         return RectF.intersects(this.body, bottom.body)
@@ -54,6 +54,10 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
 
     fun isHitBy(bullet: Bullet): Boolean {
         return RectF.intersects(this.body, bullet.body)
+    }
+
+    fun isdeath(): Boolean {
+        return health == 0
     }
 
     fun bounceIfTouchingBorders(leftEdge: Edge, rightEdge: Edge) {
@@ -66,7 +70,5 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(
             body.offset(-5f, 0f)
         }
     }
-
-
 
 }

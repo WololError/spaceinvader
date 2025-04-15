@@ -17,12 +17,9 @@ class MyView(context: Context) : SurfaceView(context) {
     private lateinit var rightEdge: Edge
     private lateinit var bottom: Bottom
     private lateinit var player: Player
+    private lateinit var Enemies: EnnemyList
 
     private val bullets = mutableListOf<Bullet>()
-    private val enemies = mutableListOf<Enemy>()
-
-    private val enemyDeathSound = MediaPlayer.create(context, R.raw.enemydeath)
-    private val shootSound = MediaPlayer.create(context, R.raw.shoot)
 
     private var isMovingLeft = false
     private var isMovingRight = false
@@ -36,8 +33,6 @@ class MyView(context: Context) : SurfaceView(context) {
 
     private val spawnHandler = Handler(Looper.getMainLooper())
     private var spawnRunnable: Runnable? = null
-
-    private val scoreManager = ScoreManager()
 
     init {
         showStartDialog()
@@ -59,7 +54,6 @@ class MyView(context: Context) : SurfaceView(context) {
     }
 
     private fun setupFixedEnemies() {
-        enemies.clear()
         val enemyWidth = 60f
         val enemyHeight = 60f
         val numRows = 2
@@ -68,11 +62,14 @@ class MyView(context: Context) : SurfaceView(context) {
         val spacing = 100f
         val xOffset = 100f
 
+        Enemies = EnnemyList(numberOfEnemies) { showGameOver(context.getString(R.string.win)) }
+        Enemies.clearEnemies()
+
         for (row in 0 until numRows) {
             for (col in 0 until numCols) {
                 val x = col * (enemyWidth + spacing) + xOffset
                 val y = row * (enemyHeight + spacing)
-                enemies.add(Enemy(x, y, (1..3).random(), bottom))
+                Enemies.addEnemy(Enemy(x, y, (1..3).random(), bottom))
             }
         }
     }
@@ -104,10 +101,8 @@ class MyView(context: Context) : SurfaceView(context) {
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_MOVE -> {
-
                 isMovingLeft = false
                 isMovingRight = false
-
                 var shootingDetected = false
 
                 for (i in 0 until event.pointerCount) {
@@ -122,18 +117,15 @@ class MyView(context: Context) : SurfaceView(context) {
                     if (rightZone) isMovingRight = true
 
                     if (shootZone && canShoot && !shootingDetected) {
-                        val bullet = player.weapon.fire(player.body.centerX(), player.body.top)
+                        val bullet = player.weapon.fire(player.body.centerX(), player.body.top, context)
                         bullets.add(bullet)
                         canShoot = false
-                        shootSound.start()
                         shootingDetected = true
                     }
                 }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-
-
                 isMovingLeft = false
                 isMovingRight = false
 
@@ -165,9 +157,9 @@ class MyView(context: Context) : SurfaceView(context) {
         updatePlayer(canvas)
         updateBullets(canvas)
         updateEnemies(canvas)
-        checkVictoryCondition()
-        drawScore(canvas)
-
+        if (isEndlessMode) {
+            drawScore(canvas)
+        }
         invalidate()
     }
 
@@ -193,7 +185,7 @@ class MyView(context: Context) : SurfaceView(context) {
     }
 
     private fun updateEnemies(canvas: Canvas) {
-        val enemyIterator = enemies.iterator()
+        val enemyIterator = Enemies.getInterator()
         while (enemyIterator.hasNext()) {
             val enemy = enemyIterator.next()
             enemy.move()
@@ -201,7 +193,7 @@ class MyView(context: Context) : SurfaceView(context) {
             if (enemy.isTouchingBottom() || enemy.y > player.y) {
                 if (!gameOver) {
                     gameOver = true
-                    enemies.clear()
+                    Enemies.clearEnemies()
                     stopEndlessSpawning()
                     showGameOver(context.getString(R.string.lose))
                 }
@@ -212,14 +204,7 @@ class MyView(context: Context) : SurfaceView(context) {
             enemy.draw(canvas)
         }
         checkCollisionsBetweenEnemies()
-        checkCollisionsBetweenBulletAndEnemy()
-    }
-
-    private fun checkVictoryCondition() {
-        if (!isEndlessMode && scoreManager.score == numberOfEnemies && !gameOver && !gameEnded) {
-            gameOver = true
-            showGameOver(context.getString(R.string.win))
-        }
+        checkCollisionsBetweenBulletAndEnemy(context)
     }
 
     private fun drawScore(canvas: Canvas) {
@@ -227,7 +212,7 @@ class MyView(context: Context) : SurfaceView(context) {
             color = Color.WHITE
             textSize = 60f
         }
-        canvas.drawText("Score: ${scoreManager.score}", 50f, 100f, paint)
+        canvas.drawText("Score: ${Enemies.NumberOfEnnemiesKilldes()}", 50f, 100f, paint)
     }
 
     private fun showGameOver(message: String) {
@@ -240,7 +225,7 @@ class MyView(context: Context) : SurfaceView(context) {
             var finalMessage = message
 
             if (isEndlessMode) {
-                finalMessage += "\nEnnemis tués : ${scoreManager.score}"
+                finalMessage += "\nEnnemis tués : ${Enemies.NumberOfEnnemiesKilldes()}"
             } else {
                 finalMessage += "\n "
             }
@@ -255,28 +240,28 @@ class MyView(context: Context) : SurfaceView(context) {
     private fun restartGame() {
         gameEnded = false
         gameOver = false
-        scoreManager.score = 0
+        if (::Enemies.isInitialized) {
+            Enemies.resetobserver()
+            Enemies.clearEnemies()
+        }
         bullets.clear()
-        enemies.clear()
         onSizeChanged(width, height, width, height)
     }
 
-    private fun checkCollisionsBetweenBulletAndEnemy() {
+    private fun checkCollisionsBetweenBulletAndEnemy(context: Context) {
         val bulletIterator = bullets.iterator()
+
         while (bulletIterator.hasNext()) {
             val bullet = bulletIterator.next()
-            val enemyIterator = enemies.iterator()
 
-            while (enemyIterator.hasNext()) {
-                val enemy = enemyIterator.next()
+            for (enemy in Enemies.getthelist()) {
                 if (enemy.isHitBy(bullet)) {
-                    enemy.takeDamage(bullet)
+                    enemy.takeDamage(bullet, context)
 
-                    if (enemy.health == 0) {
-                        enemyIterator.remove()
-                        scoreManager.EnemyKilled()
-                        enemyDeathSound.start()
+                    if (enemy.isdeath()) {
+                        Enemies.removeEnemy(enemy)
                     }
+
                     bulletIterator.remove()
                     break
                 }
@@ -285,17 +270,19 @@ class MyView(context: Context) : SurfaceView(context) {
     }
 
     private fun checkCollisionsBetweenEnemies() {
-        for (i in enemies.indices) {
-            for (j in i + 1 until enemies.size) {
-                if (enemies[i].isTouchingAnOtherEnnemy(enemies[j])) {
-                    enemies[i].bounceX()
-                    enemies[j].bounceX()
+        for (i in Enemies.getthelist().indices) {
+            for (j in i + 1 until Enemies.getthelist().size) {
+                if (Enemies.getthelist()[i].isTouchingAnOtherEnnemy(Enemies.getthelist()[j])) {
+                    Enemies.getthelist()[i].bounceX()
+                    Enemies.getthelist()[j].bounceX()
                 }
             }
         }
     }
 
     private fun startEndlessSpawning() {
+        Enemies = EnnemyList(Int.MAX_VALUE) { showGameOver(context.getString(R.string.win)) }
+
         spawnRunnable = object : Runnable {
             override fun run() {
                 if (!gameOver) {
@@ -314,7 +301,7 @@ class MyView(context: Context) : SurfaceView(context) {
     private fun spawnEnemy() {
         val x = Random.nextFloat() * (width - 60f)
         val enemy = Enemy(x, 0f, (1..3).random(), bottom)
-        enemies.add(enemy)
+        Enemies.addEnemy(enemy)
         numberOfEnemies++
     }
 }

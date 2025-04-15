@@ -5,10 +5,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 
-class Player private constructor(
-    x: Float,
-    y: Float
-) : Entity(x, y, 200f, 60f, 0f, 0f) {
+class Player private constructor(x: Float, y: Float)
+    : Entity(x, y, 200f, 60f, 0f, 0f) {
 
 
     private var Head = Paint()
