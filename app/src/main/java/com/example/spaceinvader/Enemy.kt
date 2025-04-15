@@ -8,8 +8,8 @@ import android.graphics.Path
 import android.media.MediaPlayer
 import android.content.Context
 
-class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(x, y, 60f, 60f, listOf(-5f, 5f).random(), 6f) {
-
+class Enemy(context: Context,x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(x, y, 60f, 60f, listOf(-5f, 5f).random(), 6f) {
+    private val deathSound = MediaPlayer.create(context, R.raw.enemydeath)
     init {
         when (this.health) {
             1 -> paint.color = Color.RED
@@ -40,7 +40,6 @@ class Enemy(x: Float, y: Float, var health: Int, val bottom: Bottom) : Entity(x,
     fun takeDamage(bullet: Bullet, context: Context) {
         if (health - bullet.damage <= 0) {
             health = 0
-            val deathSound = MediaPlayer.create(context, R.raw.enemydeath)
             deathSound.start()
         } else {
             health = health - bullet.damage

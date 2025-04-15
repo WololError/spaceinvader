@@ -43,7 +43,7 @@ class MyView(context: Context) : SurfaceView(context) {
 
         if (!isGameStarted) return
 
-        player = Player.getInstance(w / 2f - 100, 1900f)
+        player = Player.getInstance(context,w / 2f - 100, 1900f)
         bottom = Bottom(w / 2f - 100, 2000f)
         leftEdge = Edge(0f, 0f)
         rightEdge = Edge(width - 50f, 0f)
@@ -69,7 +69,7 @@ class MyView(context: Context) : SurfaceView(context) {
             for (col in 0 until numCols) {
                 val x = col * (enemyWidth + spacing) + xOffset
                 val y = row * (enemyHeight + spacing)
-                Enemies.addEnemy(Enemy(x, y, (1..3).random(), bottom))
+                Enemies.addEnemy(Enemy(context,x, y, (1..3).random(), bottom))
             }
         }
     }
@@ -117,7 +117,7 @@ class MyView(context: Context) : SurfaceView(context) {
                     if (rightZone) isMovingRight = true
 
                     if (shootZone && canShoot && !shootingDetected) {
-                        val bullet = player.weapon.fire(player.body.centerX(), player.body.top, context)
+                        val bullet = player.shoot()
                         bullets.add(bullet)
                         canShoot = false
                         shootingDetected = true
@@ -300,7 +300,7 @@ class MyView(context: Context) : SurfaceView(context) {
 
     private fun spawnEnemy() {
         val x = Random.nextFloat() * (width - 60f)
-        val enemy = Enemy(x, 0f, (1..3).random(), bottom)
+        val enemy = Enemy(context,x, 0f, (1..3).random(), bottom)
         Enemies.addEnemy(enemy)
         numberOfEnemies++
     }
